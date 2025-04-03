@@ -1,5 +1,5 @@
-# zeta_core.py
-# ZETA Algorithm - Core Version (Greedy Only)
+# zeta_2opt.py
+# ZETA Algorithm - Zone-wise 2-opt Version
 # Created by Pawarit Chantaraket
 
 import math
@@ -28,36 +28,44 @@ def tsp_greedy(city_list, cities):
         next_city = min(unvisited, key=lambda x: dist(last, x, cities))
         path.append(next_city)
         unvisited.remove(next_city)
-    cost = sum(dist(path[i], path[i+1], cities) for i in range(len(path)-1)) + dist(path[-1], path[0], cities)
-    return path, cost
+    return path
 
-# Core ZETA algorithm (greedy by zone)
-def zlh_tsp(cities, zone_size=5):
+# 2-opt optimization inside a zone
+def tsp_2opt(path, cities):
+    best = path
+    improved = True
+    while improved:
+        improved = False
+        for i in range(1, len(best) - 2):
+            for j in range(i + 1, len(best)):
+                if j - i == 1:
+                    continue
+                new_path = best[:i] + best[i:j][::-1] + best[j:]
+                new_cost = calc_cost(new_path, cities)
+                current_cost = calc_cost(best, cities)
+                if new_cost < current_cost:
+                    best = new_path
+                    improved = True
+        path = best
+    return best
+
+# Total tour cost
+def calc_cost(path, cities):
+    return sum(dist(path[i], path[i+1], cities) for i in range(len(path)-1)) + dist(path[-1], path[0], cities)
+
+# ZETA + zone-wise 2-opt
+
+def zlh_tsp_2opt(cities, zone_size=5):
     city_ids = list(cities.keys())
     zones = [city_ids[i:i+zone_size] for i in range(0, len(city_ids), zone_size)]
 
-    zone_paths = {}
-    zone_costs = {}
-
-    for zid, zcities in enumerate(zones):
-        path, cost = tsp_greedy(zcities, cities)
-        zone_paths[zid] = path
-        zone_costs[zid] = cost
-
-    zone_order = list(zone_paths.keys())
-    total_cost = 0
     full_path = []
+    for zcities in zones:
+        path = tsp_greedy(zcities, cities)
+        refined_path = tsp_2opt(path, cities)
+        full_path.extend(refined_path)
 
-    for i, zid in enumerate(zone_order):
-        full_path += zone_paths[zid]
-        total_cost += zone_costs[zid]
-        if i < len(zone_order) - 1:
-            end_city = zone_paths[zid][-1]
-            next_city = zone_paths[zone_order[i+1]][0]
-            total_cost += dist(end_city, next_city, cities)
-
-    if full_path:
-        total_cost += dist(full_path[-1], full_path[0], cities)
+    total_cost = calc_cost(full_path, cities)
     return full_path, total_cost
 
 # Example usage
@@ -65,10 +73,10 @@ if __name__ == "__main__":
     n = 1000000
     cities = generate_cities(n)
     start = time()
-    path, cost = zlh_tsp(cities)
+    path, cost = zlh_tsp_2opt(cities)
     elapsed = time() - start
 
-    print(f"ZETA Core Version")
+    print("ZETA + Zone-wise 2-opt Version")
     print(f"# Cities: {n}")
     print(f"Total Cost: {round(cost, 2)}")
     print(f"Runtime: {round(elapsed, 4)} seconds")
