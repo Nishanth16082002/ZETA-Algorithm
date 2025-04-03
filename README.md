@@ -64,3 +64,7 @@ You can also fork and build your own version of ZETA with ML, 3-opt, grid partit
 ## 📜 License
 
 This project is released under the [MIT License](LICENSE).
+
+> 🛡 If you use or modify this algorithm, please credit the original author: **Pawarit Chantaraket**
+
+This project is released under the [MIT License](LICENSE).
